@@ -25,7 +25,7 @@
 % when: 8-14-2019
 
 %%
-n=1100; %number of networks to create
+n=5; %number of networks to create
 spe=30;
 con=0.15;
 err=0.025;
@@ -58,12 +58,13 @@ for i=1:n
     
     % Save in a .csv file
     tableweb=array2table([web,fish,B0]);
-    cd('Data/WebStock')
+    cd('Trials')
     filename=sprintf('Web%03d.csv',i);
     writetable(tableweb,filename,'WriteVariableNames',false,'Delimiter',',')
-    cd('../..')
+    cd('..')
 end
 
 % Save in a MAT-file
-cd('Data')
-save('Webs1100.mat','webs') %Change name of file to create new webs
+cd('Trials')
+save('Webs5.mat','webs') %Change name of file to create new webs
+cd('..')

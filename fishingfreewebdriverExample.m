@@ -23,8 +23,8 @@
 %% 1. UPLOADING OF THE NETWORK STRUCTURES
 
 %Change to Data folder to load the Food-Web networks 'Webs1100.mat' file
-cd('Data')
-load('Webs1100.mat')
+cd('Trials')
+load('Webs5.mat')
 cd('..')
 
 nSim=1; %number of simulations
@@ -33,7 +33,7 @@ t1=4000; %last timestep
 tspan=0:t1;
 
 
-    k=randi(500);    
+    k=randi(5);    
     sprintf('Simulation %d/%d',k,nSim)
     
     web=webs{k,1};
@@ -68,7 +68,7 @@ tspan=0:t1;
     B(B<Bext)=0;
     E(E<0)=0;
     X=[B,E];
-    
+    ext = X(end, :) == 0;
 
     %% 6. Plot Results
 figure
