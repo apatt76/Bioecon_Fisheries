@@ -20,13 +20,14 @@
 
 %% LOAD DATA -------------------------------------------------------------------------------------
 %This loads a file that contains the conserved webs from the fishing free films. 
-cd('Data')
+cd('DATA')
 load('SimCons.mat')
 cd('..')
 
 
 %% SIMULATIONS -------------------------------------------------------------------------
-tspan=0:4000;
+dt=1;
+tspan=0:dt:1000;
 
     %% SETUP
     k=randi(length(SimCons)); 
@@ -65,13 +66,48 @@ tspan=0:4000;
     E0=datasample(Effort,1); %randomly choose a Fixed Effort level, change this to look at specific levels
     sprintf('Simulation %d/%d Effort %d',k,length(SimCons),E0)
     X0=[B0,E0];
-    options=odeset('RelTol',10^-8,'AbsTol',10^-8);
-    [t,X] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext),tspan,X0,options);
+
+    %% old method
+    %options=odeset('RelTol',10^-8,'AbsTol',10^-8);
+    %[t,X] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext),tspan,X0,options);
+
+    n_steps = length(tspan);
+    X = zeros(n_steps, length(X0));   % preallocate output
+    X(1,:) = X0;                       % store initial state
+    t = tspan(:);                      % store time points
+    noise_scale=1+0.0005;
+    %disp(r);
+    %disp(B);
+    %disp(K);
+    
+    %disp(r.*(En-sum(B(basal))./K).*B);
+    
+
+for i = 2:n_steps
+    noise=randn(size(X0)-1);
+    En=noise'.*noise_scale;
+    %disp(En);
+    % Integrate from t(i-1) to t(i)
+    [~, Xtemp] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext,En),[t(i-1), t(i)], X(i-1,:)', options);
+
+    % Take the final state and add noise (e.g., Gaussian noise)
+    %disp(Xtemp(end,:)');
+    
+    
+    %X_noisy = Xtemp(end,:)' + noise' .* noise_scale;  % tune noise_scale as needed
+    %disp(X_noisy);
+    % Save it
+    X(i,:) = Xtemp(end,:)';
+end
+
     B=X(:,1:spe);
     E=X(:,spe+1:end);
     B(B<Bext)=0;
     E(E<0)=0;
     X=[B,E];
+    ext = X(end, :) == 0;
+    count = sum(ext == 0);
+    disp(count);
         
 
 %% PLOT RESULTS

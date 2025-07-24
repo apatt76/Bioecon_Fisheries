@@ -33,7 +33,7 @@
 %   - Bext: extinctionthreshold
 
 %%
-function [dXdt]=differential(t,X,x,y,r,K,e,h,c,Bs,nicheweb,harvest,mu,co,ca,a,b,price,Bext)
+function [dXdt]=differential(t,X,x,y,r,K,e,h,c,Bs,nicheweb,harvest,mu,co,ca,a,b,price,Bext,En)
 spe=length(nicheweb);
 B=X(1:spe);
 E=X(spe+1:end);
@@ -46,8 +46,8 @@ E(E<0)=0;
 
 %% 1. NPP: Net Primary Production
 basal=(sum(nicheweb,2)==0);
-NPP=r.*(1-sum(B(basal))./K).*B;
-
+NPP=B.*(r+0+r.*(-sum(B(basal))./K));
+disp(NPP);
 %% 2. MetaLoss: Metabolic Loss (mortality, energy exependiture for basal metabolism, activity, thermoregulation...)
 MetaLoss=x.*B;
 
