@@ -24,10 +24,11 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
+for rep=1:100
 
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
-tspan=0:dt:1000;
+tspan=0:dt:150;
 
     %% SETUP
     k=randi(length(SimCons)); 
@@ -68,14 +69,15 @@ tspan=0:dt:1000;
     X0=[B0,E0];
 
     %% old method
-    %options=odeset('RelTol',10^-8,'AbsTol',10^-8);
     %[t,X] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext),tspan,X0,options);
 
     n_steps = length(tspan);
     X = zeros(n_steps, length(X0));   % preallocate output
     X(1,:) = X0;                       % store initial state
     t = tspan(:);                      % store time points
-    noise_scale=1+0.0005;
+    noise_scale=0.05;
+    options=odeset('RelTol',10^-8,'AbsTol',10^-8);
+    seasonality=0.5;
     %disp(r);
     %disp(B);
     %disp(K);
@@ -84,11 +86,15 @@ tspan=0:dt:1000;
     
 
 for i = 2:n_steps
-    noise=randn(size(X0)-1);
+    noise=randn(size(B0));
     En=noise'.*noise_scale;
-    %disp(En);
+    if mod(i,2)==0 %i is even
+         Season=1+seasonality;
+    else %i is odd
+         Season=1-seasonality; 
+    end
     % Integrate from t(i-1) to t(i)
-    [~, Xtemp] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext,En),[t(i-1), t(i)], X(i-1,:)', options);
+    [~, Xtemp] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext,En,Season),[t(i-1), t(i)], X(i-1,:)', options);
 
     % Take the final state and add noise (e.g., Gaussian noise)
     %disp(Xtemp(end,:)');
@@ -111,17 +117,24 @@ end
         
 
 %% PLOT RESULTS
-figure
-set(gcf,'color','w');
+%figure
+%set(gcf,'color','w');
 %Time series of all trophic species
-subplot(2,2,1)
-plot(X(:,1:30));
+%subplot(2,2,1)
+%plot(X(:,1:30));
 %Time series of Effort (unchanging in the Fixed Effort simulation)
-subplot(2,2,2)
-plot(X(:,31));
+%subplot(2,2,2)
+%plot(X(:,31));
 %Time series of harvested species
-subplot(2,2,3)
-plot(X(:,harv))
+%subplot(2,2,3)
+%plot(X(:,harv))
 %Time series of all labeled fish species
-subplot(2,2,4)
-plot(X(:,fish))
+%subplot(2,2,4)
+%plot(X(:,fish))
+
+cd('Trials')
+writematrix(X,"foodweb_TS"+rep+".csv");
+writematrix(web,"foodweb_interactions"+rep+".csv");
+cd('..')
+
+end
