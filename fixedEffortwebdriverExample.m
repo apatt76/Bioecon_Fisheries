@@ -75,9 +75,11 @@ tspan=0:dt:150;
     X = zeros(n_steps, length(X0));   % preallocate output
     X(1,:) = X0;                       % store initial state
     t = tspan(:);                      % store time points
-    noise_scale=0.05;
+    noise_scale1=0.05;
+    noise_scale2=0.05;
     options=odeset('RelTol',10^-8,'AbsTol',10^-8);
-    seasonality=0.5;
+    seasonality1=0.5;
+    seasonality2=0.5;
     %disp(r);
     %disp(B);
     %disp(K);
@@ -87,14 +89,17 @@ tspan=0:dt:150;
 
 for i = 2:n_steps
     noise=randn(size(B0));
-    En=noise'.*noise_scale;
+    En1=noise'.*noise_scale1;
+    En2=noise'.*noise_scale2;
     if mod(i,2)==0 %i is even
-         Season=1+seasonality;
+         Season1=1+seasonality1;
+         Season2=1+seasonality2;
     else %i is odd
-         Season=1-seasonality; 
+         Season1=1-seasonality1; 
+         Season2=1-seasonality2; 
     end
     % Integrate from t(i-1) to t(i)
-    [~, Xtemp] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext,En,Season),[t(i-1), t(i)], X(i-1,:)', options);
+    [~, Xtemp] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext,En1,En2,Season1,Season2),[t(i-1), t(i)], X(i-1,:)', options);
 
     % Take the final state and add noise (e.g., Gaussian noise)
     %disp(Xtemp(end,:)');
@@ -133,8 +138,8 @@ end
 %plot(X(:,fish))
 
 cd('Trials')
-writematrix(X,"foodweb_TS"+rep+".csv");
-writematrix(web,"foodweb_interactions"+rep+".csv");
+writematrix(X,"foodweb_TS_Gain"+rep+".csv");
+writematrix(web,"foodweb_interactions_Gain"+rep+".csv");
 cd('..')
 
 end
