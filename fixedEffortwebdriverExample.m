@@ -131,6 +131,25 @@ end
     disp(count);
         
 
+nSteps = length(t);
+nSpecies = size(params.nicheweb, 1);
+nStateVars = size(X, 2);
+
+% Preallocate
+F_series = zeros(nSpecies, nSpecies, nSteps);
+J_series = zeros(nStateVars, nStateVars, nSteps);
+
+for i = 1:nSteps
+    xi = X(i,:)';      % state vector at time t(i), as column
+    ti = t(i);         % current time
+
+    % Extract biomass (you may need to adjust if B is not first in X)
+    B = xi(1:nSpecies);  
+
+    % Compute F and J
+    F_series(:,:,i) = computeF(B, params);
+    J_series(:,:,i) = computeJacobian(@differential, xi, ti, params);
+end
 %% PLOT RESULTS
 %figure
 %set(gcf,'color','w');
@@ -146,11 +165,15 @@ end
 %Time series of all labeled fish species
 %subplot(2,2,4)
 %plot(X(:,fish))
+%disp(F_series);
+F_mean = squeeze(mean(F_series, 3));      % size: N × N
+F_meanAbs = squeeze(mean(abs(F_series), 3));      % size: N × N
+F_var  = squeeze(var(F_series, 0, 3));    % size: N × N
+J_mean = squeeze(mean(J_series, 3));      % size: N × N
+J_meanAbs = squeeze(mean(abs(J_series), 3));      % size: N × N
+J_var  = squeeze(var(J_series, 0, 3));    % size: N × N
 
-F_mean = squeeze(mean(F_series, 1));      % size: N × N
-F_var  = squeeze(var(F_series, 0, 1));    % size: N × N
-J_mean = squeeze(mean(J_series, 1));      % size: N × N
-J_var  = squeeze(var(J_series, 0, 1));    % size: N × N
+
 
 cd('Trials')
 writematrix(X,"foodweb_TS_FJ"+rep+".csv");
@@ -159,6 +182,8 @@ writematrix(F_mean, "F_mean"+rep+".csv");
 writematrix(F_var,  "F_var"+rep+".csv");
 writematrix(J_mean, "J_mean"+rep+".csv");
 writematrix(J_var,  "J_var"+rep+".csv");
+writematrix(F_meanAbs,"F_meanAbs"+rep+".csv")
+writematrix(J_meanAbs,"J_meanAbs"+rep+".csv")
 cd('..')
 
 end
