@@ -98,9 +98,19 @@ for i = 2:n_steps
          Season1=1-seasonality1; 
          Season2=1-seasonality2; 
     end
-    % Integrate from t(i-1) to t(i)
-    [~, Xtemp] = ode45(@(t,X) differential(t,X,x,y,r,K,e,h,c,Bs,web,harv,mu,co,ca,a,b,price,Bext,En1,En2,Season1,Season2),[t(i-1), t(i)], X(i-1,:)', options);
 
+    % code to extract the F values from the differential function each
+    % timestep
+    % Pack all parameters into a struct
+    params = struct('x', x, 'y', y, 'r', r, 'K', K, 'e', e, 'h', h, 'c', c, ...
+    'Bs', Bs, 'nicheweb', web, 'harvest', harv, 'mu', mu, ...
+    'co', co, 'ca', ca, 'a', a, 'b', b, 'price', price, ...
+    'Bext', Bext, 'En1', En1, 'En2', En2, 'Season1', Season1, 'Season2', Season2);
+
+    options = odeset('OutputFcn', @(t, y, flag) outputFvalues(t, y, flag, params));
+    % Integrate from t(i-1) to t(i)
+    [~, Xtemp] = ode45(@(t,X) differential(t,X,params),[t(i-1), t(i)], X(i-1,:)', options);
+    
     % Take the final state and add noise (e.g., Gaussian noise)
     %disp(Xtemp(end,:)');
     
@@ -137,9 +147,18 @@ end
 %subplot(2,2,4)
 %plot(X(:,fish))
 
+F_mean = squeeze(mean(F_series, 1));      % size: N × N
+F_var  = squeeze(var(F_series, 0, 1));    % size: N × N
+J_mean = squeeze(mean(J_series, 1));      % size: N × N
+J_var  = squeeze(var(J_series, 0, 1));    % size: N × N
+
 cd('Trials')
-writematrix(X,"foodweb_TS_Gain"+rep+".csv");
-writematrix(web,"foodweb_interactions_Gain"+rep+".csv");
+writematrix(X,"foodweb_TS_FJ"+rep+".csv");
+writematrix(web,"foodweb_interactions_FJ"+rep+".csv");
+writematrix(F_mean, "F_mean"+rep+".csv");
+writematrix(F_var,  "F_var"+rep+".csv");
+writematrix(J_mean, "J_mean"+rep+".csv");
+writematrix(J_var,  "J_var"+rep+".csv");
 cd('..')
 
 end

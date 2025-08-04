@@ -33,7 +33,32 @@
 %   - Bext: extinctionthreshold
 
 %%
-function [dXdt]=differential(t,X,x,y,r,K,e,h,c,Bs,nicheweb,harvest,mu,co,ca,a,b,price,Bext,En1,En2,Season1,Season2)
+function [dXdt]=differential(t,X,params)
+
+% recovery of parameters
+x=params.x;
+y=params.y;
+r=params.r;
+K=params.K;
+e=params.e;
+h=params.h;
+c=params.c;
+Bs=params.Bs;
+nicheweb=params.nicheweb;
+harvest=params.harvest;
+mu=params.mu;
+co=params.co;
+ca=params.ca;
+a=params.a;
+b=params.b;
+price=params.price;
+Bext=params.Bext;
+En1=params.En1;
+En2=params.En2;
+Season1=params.Season1;
+Season2=params.Season2;
+
+
 spe=length(nicheweb);
 B=X(1:spe);
 E=X(spe+1:end);
