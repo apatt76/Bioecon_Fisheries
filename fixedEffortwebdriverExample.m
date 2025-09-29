@@ -24,8 +24,8 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
-for rep=1:100
-
+%for rep=1:1
+rep=1;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
 tspan=0:dt:150;
@@ -184,6 +184,15 @@ writematrix(J_mean, "J_mean"+rep+".csv");
 writematrix(J_var,  "J_var"+rep+".csv");
 writematrix(F_meanAbs,"F_meanAbs"+rep+".csv")
 writematrix(J_meanAbs,"J_meanAbs"+rep+".csv")
+tIndex=30;
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_rand.csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_rand.csv");
+tIndex=40;
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_rand.csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_rand.csv");
+tIndex=50;
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_rand.csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_rand.csv");
 cd('..')
 
-end
+%end
