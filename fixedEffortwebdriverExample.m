@@ -24,8 +24,9 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
-for rep=1:100
-
+rng(12390);
+%for rep=1:1
+rep=9999;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
 tspan=0:dt:150;
@@ -176,7 +177,9 @@ J_var  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 cd('Trials')
+writematrix(T,"trophic_level"+rep+".csv");
 writematrix(X,"foodweb_TS_FJ"+rep+".csv");
+writematrix(X(:,fish),"foodweb_TS_fish"+rep+".csv");
 writematrix(web,"foodweb_interactions_FJ"+rep+".csv");
 writematrix(F_mean, "F_mean"+rep+".csv");
 writematrix(F_var,  "F_var"+rep+".csv");
@@ -184,6 +187,15 @@ writematrix(J_mean, "J_mean"+rep+".csv");
 writematrix(J_var,  "J_var"+rep+".csv");
 writematrix(F_meanAbs,"F_meanAbs"+rep+".csv")
 writematrix(J_meanAbs,"J_meanAbs"+rep+".csv")
+tIndex=30;
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
+tIndex=40;
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
+tIndex=50;
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
 cd('..')
 
-end
+%end
