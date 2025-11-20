@@ -187,15 +187,14 @@ writematrix(J_mean, "J_mean"+rep+".csv");
 writematrix(J_var,  "J_var"+rep+".csv");
 writematrix(F_meanAbs,"F_meanAbs"+rep+".csv")
 writematrix(J_meanAbs,"J_meanAbs"+rep+".csv")
-tIndex=30;
+writematrix(e,"e_"+rep+".csv")
+writematrix(ax_ar,"ax_ar"+rep+".csv")
+writematrix(y,"y_"+rep+".csv")
+for tIndex=1:150
 writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
 writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
-tIndex=40;
-writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
-writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
-tIndex=50;
-writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
-writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
-cd('..')
+end
+
+
 
 %end
