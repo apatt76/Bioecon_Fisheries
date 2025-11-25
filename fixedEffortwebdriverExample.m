@@ -26,7 +26,7 @@ cd('..')
 
 rng(12390);
 %for rep=1:1
-rep=9999;
+rep=9997;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
 tspan=0:dt:150;
@@ -43,6 +43,12 @@ tspan=0:dt:150;
     [r,K,y,e,Bs,c,h,ax_ar,Z,po,Bext]=setup_default(web,fish);
     x=ax_ar.*(Z.^(-po.*(T-1)));
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %try to increase K
+    K=K*2.5;
+    % try to lower B_naught (denoted Bs here for B saturation)
+    Bs=Bs*0.3;
+
     %mu=0, this keeps the Effort static at E0, the initial Effort value
     mu=0;
     
@@ -79,8 +85,8 @@ tspan=0:dt:150;
     noise_scale1=0.05;
     noise_scale2=0.05;
     options=odeset('RelTol',10^-8,'AbsTol',10^-8);
-    seasonality1=0.5;
-    seasonality2=0.5;
+    seasonality1=0;
+    seasonality2=0;
     %disp(r);
     %disp(B);
     %disp(K);
@@ -90,6 +96,7 @@ tspan=0:dt:150;
 
 for i = 2:n_steps
     noise=randn(size(B0));
+    %noise=zeros(1,30);
     En1=noise'.*noise_scale1;
     En2=noise'.*noise_scale2;
     if mod(i,2)==0 %i is even
@@ -152,20 +159,20 @@ for i = 1:nSteps
     J_series(:,:,i) = computeJacobian(@differential, xi, ti, params);
 end
 %% PLOT RESULTS
-%figure
-%set(gcf,'color','w');
+figure
+set(gcf,'color','w');
 %Time series of all trophic species
-%subplot(2,2,1)
-%plot(X(:,1:30));
+subplot(2,2,1)
+plot(X(:,1:30));
 %Time series of Effort (unchanging in the Fixed Effort simulation)
-%subplot(2,2,2)
-%plot(X(:,31));
+subplot(2,2,2)
+plot(X(:,31));
 %Time series of harvested species
-%subplot(2,2,3)
-%plot(X(:,harv))
+subplot(2,2,3)
+plot(X(:,harv))
 %Time series of all labeled fish species
-%subplot(2,2,4)
-%plot(X(:,fish))
+subplot(2,2,4)
+plot(X(:,fish))
 %disp(F_series);
 F_mean = squeeze(mean(F_series, 3));      % size: N × N
 F_meanAbs = squeeze(mean(abs(F_series), 3));      % size: N × N
@@ -191,8 +198,8 @@ writematrix(e,"e_"+rep+".csv")
 writematrix(ax_ar,"ax_ar"+rep+".csv")
 writematrix(y,"y_"+rep+".csv")
 for tIndex=1:150
-writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_9999.csv");
-writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_9999.csv");
+writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_"+rep+".csv");
+writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_"+rep+".csv");
 end
 
 
