@@ -24,12 +24,13 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
-rng(12390);
+%rng(12390);
+rng(5);
 %for rep=1:1
-rep=9997;
+rep=5005;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
-tspan=0:dt:150;
+tspan=0:dt:2000;
 
     %% SETUP
     k=randi(length(SimCons)); 
@@ -41,13 +42,22 @@ tspan=0:dt:150;
     
     T=SimCons(k).initial.Troph;
     [r,K,y,e,Bs,c,h,ax_ar,Z,po,Bext]=setup_default(web,fish);
+    % try averaging the fish and invertebrates:
+    %ax_ar
+    ax_ar(ax_ar~=0)=0.597;
+    %y seems already same?
+    
+
+
     x=ax_ar.*(Z.^(-po.*(T-1)));
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %try to increase K
-    K=K*2.5;
+    K=K*2;
     % try to lower B_naught (denoted Bs here for B saturation)
     Bs=Bs*0.3;
+    
+
 
     %mu=0, this keeps the Effort static at E0, the initial Effort value
     mu=0;
@@ -174,11 +184,11 @@ plot(X(:,harv))
 subplot(2,2,4)
 plot(X(:,fish))
 %disp(F_series);
-F_mean = squeeze(mean(F_series, 3));      % size: N × N
-F_meanAbs = squeeze(mean(abs(F_series), 3));      % size: N × N
+F_mean = squeeze(mean(F_series(:,:,end-499:end), 3));      % size: N × N
+F_meanAbs = squeeze(mean(abs(F_series(:,:,end-499:end)), 3));      % size: N × N
 F_var  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean = squeeze(mean(J_series, 3));      % size: N × N
-J_meanAbs = squeeze(mean(abs(J_series), 3));      % size: N × N
+J_mean = squeeze(mean(J_series(:,:,end-499:end), 3));      % size: N × N
+J_meanAbs = squeeze(mean(abs(J_series(:,:,end-499:end)), 3));      % size: N × N
 J_var  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
@@ -198,8 +208,8 @@ writematrix(e,"e_"+rep+".csv")
 writematrix(ax_ar,"ax_ar"+rep+".csv")
 writematrix(y,"y_"+rep+".csv")
 for tIndex=1:150
-writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_"+rep+".csv");
-writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_"+rep+".csv");
+%writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_"+rep+".csv");
+%writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_"+rep+".csv");
 end
 
 
