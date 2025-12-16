@@ -26,14 +26,15 @@ cd('..')
 
 %rng(12390);
 rng(5);
-%for rep=1:1
-rep=5005;
+for rep=1:50;
+%rep=100000;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
 tspan=0:dt:2000;
 
     %% SETUP
-    k=randi(length(SimCons)); 
+    %k=randi(length(SimCons)); 
+    k=rep;
     web=SimCons(k).topo.web; %randomly choose a conserved web from the list used in this study
     spe=length(web);
     fish=SimCons(k).topo.fish;
@@ -78,10 +79,12 @@ tspan=0:dt:2000;
     
     
     %% EFFORT LEVELS
-    Effort=[0,1,2,3,4,5,6,7,8,9,10,12,15,20]; % list of fixed effort levels
+    %Effort=[0,1,2,3,4,5,6,7,8,9,10,12,15,20]; % list of fixed effort levels
     
     %% RUN
-    E0=datasample(Effort,1); %randomly choose a Fixed Effort level, change this to look at specific levels
+    %E0=datasample(Effort,1); %randomly choose a Fixed Effort level, change this to look at specific levels
+    % set Effort to a constant
+    E0 = 5; % Set a constant effort level for the simulation
     sprintf('Simulation %d/%d Effort %d',k,length(SimCons),E0)
     X0=[B0,E0];
 
@@ -193,7 +196,7 @@ J_var  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('Trials')
+cd('Trials2')
 writematrix(T,"trophic_level"+rep+".csv");
 writematrix(X,"foodweb_TS_FJ"+rep+".csv");
 writematrix(X(:,fish),"foodweb_TS_fish"+rep+".csv");
@@ -207,11 +210,25 @@ writematrix(J_meanAbs,"J_meanAbs"+rep+".csv")
 writematrix(e,"e_"+rep+".csv")
 writematrix(ax_ar,"ax_ar"+rep+".csv")
 writematrix(y,"y_"+rep+".csv")
-for tIndex=1:150
-%writematrix(squeeze(F_series(:,:,tIndex)),"F_Inst_"+tIndex+"_"+rep+".csv");
-%writematrix(squeeze(J_series(:,:,tIndex)),"J_Int_"+tIndex+"_"+rep+".csv");
+
+[nrF, ncF, ntF] = size(F_series);
+[nrJ, ncJ, ntJ] = size(J_series);
+
+
+F_out = zeros(ntF, nrF*ncF);
+J_out = zeros(ntJ, nrJ*ncJ);
+
+for tIndex = 1:ntF
+    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
 end
 
+for tIndex = 1:ntJ
+    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
+end
 
+writematrix(F_out, "F_Inst_" + rep + ".csv");
+writematrix(J_out, "J_Inst_" + rep + ".csv");
 
-%end
+cd('..')
+
+end
