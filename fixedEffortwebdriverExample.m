@@ -26,16 +26,16 @@ cd('..')
 
 %rng(12390);
 rng(5);
-for rep=1:50;
+for rep=1:100
 %rep=100000;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
-tspan=0:dt:2000;
+tspan=0:dt:3000;
 
     %% SETUP
     %k=randi(length(SimCons)); 
     k=rep;
-    web=SimCons(k).topo.web; %randomly choose a conserved web from the list used in this study
+    web=SimCons(k).topo.web; % choose a conserved web from the list used in this study
     spe=length(web);
     fish=SimCons(k).topo.fish;
     ext=SimCons(k).free.ext;
@@ -196,7 +196,7 @@ J_var  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('Trials2')
+cd('TrialsLong')
 writematrix(T,"trophic_level"+rep+".csv");
 writematrix(X,"foodweb_TS_FJ"+rep+".csv");
 writematrix(X(:,fish),"foodweb_TS_fish"+rep+".csv");
@@ -214,20 +214,22 @@ writematrix(y,"y_"+rep+".csv")
 [nrF, ncF, ntF] = size(F_series);
 [nrJ, ncJ, ntJ] = size(J_series);
 
+% output timeseries of J and F (optional)
 
-F_out = zeros(ntF, nrF*ncF);
-J_out = zeros(ntJ, nrJ*ncJ);
+%F_out = zeros(ntF, nrF*ncF);
+%J_out = zeros(ntJ, nrJ*ncJ);
 
-for tIndex = 1:ntF
-    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
-end
 
-for tIndex = 1:ntJ
-    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
-end
+%for tIndex = 1:ntF
+%    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
+%end
 
-writematrix(F_out, "F_Inst_" + rep + ".csv");
-writematrix(J_out, "J_Inst_" + rep + ".csv");
+%for tIndex = 1:ntJ
+%    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
+%end
+
+%writematrix(F_out, "F_Inst_" + rep + ".csv");
+%writematrix(J_out, "J_Inst_" + rep + ".csv");
 
 cd('..')
 
