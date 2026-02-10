@@ -57,6 +57,7 @@ En1=params.En1;
 En2=params.En2;
 Season1=params.Season1;
 Season2=params.Season2;
+strength = params.strength;
 
 
 spe=length(nicheweb);
@@ -89,6 +90,7 @@ Bsh=(ones(spe,1)*Bs').^h;
 cBBsh=(c.*B*ones(1,spe)).*Bsh;
 sumwBh=sum(wBh,2)*ones(1,spe);
 F=wBh./(Bsh+cBBsh+sumwBh); %Bsh is always different from zero --> no problem of division
+F = F .* strength;
 
 %% 4. TrophLoss and TrophGain: Loss and Gain of organic matter by consumer-resource interaction
 gain=Season2*(1+En2).*(x.*y.*B)*ones(1,spe).*F;
