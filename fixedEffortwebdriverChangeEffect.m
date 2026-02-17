@@ -26,7 +26,7 @@ cd('..')
 
 %rng(12390);
 rng(5);
-for rep=11:100
+for rep=1:10
 
 
     
@@ -122,8 +122,9 @@ while ~success && attempt < max_attempts
     % ---- 3a: create new random strengths ----
     strength1 = web;              % start with topology
     idx = (strength1 == 1);                       % existing links
+    strength1=double(strength1);
     strength1(idx) = 0.5 + (rand(sum(idx(:)),1) > 0.5);
-    strength1(strength1==1) = 0.5;      % or random, trait-based, etc.
+    
     
     % ---- 3b: update params ---- 
     % include in 3c
@@ -144,10 +145,10 @@ for i = 2:n_steps
     end
 
 
-    if ti>2500
-        strength=strength1;
+    if t(i)>2500
+        strength=double(strength1);
     else
-        strength=web;
+        strength=double(web);
     end
 
     % code to extract the F values from the differential function each
@@ -209,7 +210,7 @@ nStateVars = size(X, 2);
 
 
 % Preallocate
-%F_series = zeros(nSpecies, nSpecies, nSteps);
+F_series = zeros(nSpecies, nSpecies, nSteps);
 J_series = zeros(nStateVars, nStateVars, nSteps);
 
 for i = nSteps-999:nSteps
@@ -220,7 +221,7 @@ for i = nSteps-999:nSteps
     B = xi(1:nSpecies);  
 
     % Compute F and J
-    %F_series(:,:,i) = computeF(B, params);
+    F_series(:,:,i) = computeF(B, params);
     J_series(:,:,i) = computeJacobian(@differential, xi, ti, params);
 end
 
@@ -244,15 +245,15 @@ plot(X(:,fish))
 
 %disp(F_series);
 
-%F_mean1 = squeeze(mean(F_series(:,:,end-999:end-499), 3));      % size: N × N
-%F_meanAbs1 = squeeze(mean(abs(F_series(:,:,end-999:end-499)), 3));      % size: N × N
+F_mean1 = squeeze(mean(F_series(:,:,end-999:end-499), 3));      % size: N × N
+F_meanAbs1 = squeeze(mean(abs(F_series(:,:,end-999:end-499)), 3));      % size: N × N
 %F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
 J_mean1 = squeeze(mean(J_series(:,:,end-999:end-499), 3));      % size: N × N
 J_meanAbs1 = squeeze(mean(abs(J_series(:,:,end-999:end-499)), 3));      % size: N × N
 J_var1  = squeeze(var(J_series, 0, 3));    % size: N × N
 
-%F_mean2 = squeeze(mean(F_series(:,:,end-499:end), 3));      % size: N × N
-%F_meanAbs2 = squeeze(mean(abs(F_series(:,:,end-499:end)), 3));      % size: N × N
+F_mean2 = squeeze(mean(F_series(:,:,end-499:end), 3));      % size: N × N
+F_meanAbs2 = squeeze(mean(abs(F_series(:,:,end-499:end)), 3));      % size: N × N
 %F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
 J_mean2 = squeeze(mean(J_series(:,:,end-499:end), 3));      % size: N × N
 J_meanAbs2 = squeeze(mean(abs(J_series(:,:,end-499:end)), 3));      % size: N × N
@@ -267,13 +268,19 @@ writematrix(T,"trophic_level"+rep+".csv");
 writematrix(X(:,fish),"foodweb_TS_fish"+rep+".csv");
 writematrix(web,"foodweb_interactions_FJ"+rep+".csv");
 
+writematrix(strength1,"strength"+rep+".csv")
+
 writematrix(J_mean1, "J_mean1_"+rep+".csv");
 writematrix(J_var1,  "J_var1_"+rep+".csv");
 writematrix(J_meanAbs1,"J_meanAbs1_"+rep+".csv")
+writematrix(F_mean1, "F_mean1_"+rep+".csv");
+writematrix(F_meanAbs1,"F_meanAbs1_"+rep+".csv")
 
 writematrix(J_mean2, "J_mean2_"+rep+".csv");
 writematrix(J_var2,  "J_var2_"+rep+".csv");
 writematrix(J_meanAbs2,"J_meanAbs2_"+rep+".csv");
+writematrix(F_mean2, "F_mean2_"+rep+".csv");
+writematrix(F_meanAbs2,"F_meanAbs2_"+rep+".csv")
 
 writematrix(e,"e_"+rep+".csv");
 writematrix(ax_ar,"ax_ar"+rep+".csv");
