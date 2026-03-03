@@ -24,10 +24,12 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
-%rng(12390);
-rng(5);
-for rep=1:10
+seed1=12390;
 
+%rng(5);
+for rep=1:50
+new_seed=seed1;    
+rng(new_seed);
 
     
 %rep=100000;
@@ -118,7 +120,8 @@ success = false;
 
 while ~success && attempt < max_attempts
     attempt = attempt + 1;
-    
+    new_seed=seed1+attempt;
+    rng(new_seed);
     % ---- 3a: create new random strengths ----
     strength1 = web;              % start with topology
     idx = (strength1 == 1);                       % existing links
@@ -175,23 +178,29 @@ end
     
     % ---- 3d: check extinctions ----
     
-    
-    alive1 = X(2500,1:spe)>0;  % species alive at timepoint 1
-    alive2 = X(3000,1:spe)>0;  % species alive at timepoint 1
-    
+
+    alive1 = X(2500,1:spe)>Bext;  % species alive at timepoint 1
+    alive2 = X(3000,1:spe)>Bext;  % species alive at timepoint 2
+
     % new extinctions = species that were alive at start but dead at end
     new_extinctions = alive1 & ~alive2;
-
+    disp('here is the number of new extinctions');
+    disp(sum(new_extinctions));
     % check if there were any new extinctions
     any_new_extinct = any(new_extinctions);
     
     if ~any_new_extinct
         success = true;
         fprintf('Success on attempt %d\n', attempt);
+        disp('seed is');
+        disp(new_seed);
     else
         fprintf('Extinctions occurred on attempt %d, redrawing strengths\n', attempt);
+        disp('seed is');
+        disp(new_seed);
     end
 end
+
 
 
     B=X(:,1:spe);
@@ -201,6 +210,7 @@ end
     X=[B,E];
     ext = X(end, :) == 0;
     count = sum(ext == 0);
+    disp('number of species alive is');
     disp(count);
         
 
@@ -208,12 +218,12 @@ nSteps = length(t);
 nSpecies = size(params.nicheweb, 1);
 nStateVars = size(X, 2);
 
-
-% Preallocate
+if success
+    % Preallocate
 F_series = zeros(nSpecies, nSpecies, nSteps);
 J_series = zeros(nStateVars, nStateVars, nSteps);
 
-for i = nSteps-999:nSteps
+for i = (nSteps-1005):nSteps
     xi = X(i,:)';      % state vector at time t(i), as column
     ti = t(i);         % current time
 
@@ -245,68 +255,75 @@ plot(X(:,fish))
 
 %disp(F_series);
 
-F_mean1 = squeeze(mean(F_series(:,:,end-999:end-499), 3));      % size: N × N
-F_meanAbs1 = squeeze(mean(abs(F_series(:,:,end-999:end-499)), 3));      % size: N × N
+F_mean1 = squeeze(mean(F_series(:,:,2000:2500), 3));      % size: N × N
+F_meanAbs1 = squeeze(mean(abs(F_series(:,:,2000:2500)), 3));      % size: N × N
 %F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean1 = squeeze(mean(J_series(:,:,end-999:end-499), 3));      % size: N × N
-J_meanAbs1 = squeeze(mean(abs(J_series(:,:,end-999:end-499)), 3));      % size: N × N
+J_mean1 = squeeze(mean(J_series(:,:,2000:2500), 3));      % size: N × N
+J_meanAbs1 = squeeze(mean(abs(J_series(:,:,2000:2500)), 3));      % size: N × N
 J_var1  = squeeze(var(J_series, 0, 3));    % size: N × N
 
-F_mean2 = squeeze(mean(F_series(:,:,end-499:end), 3));      % size: N × N
-F_meanAbs2 = squeeze(mean(abs(F_series(:,:,end-499:end)), 3));      % size: N × N
+F_mean2 = squeeze(mean(F_series(:,:,2501:3000), 3));      % size: N × N
+F_meanAbs2 = squeeze(mean(abs(F_series(:,:,2501:3000)), 3));      % size: N × N
 %F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean2 = squeeze(mean(J_series(:,:,end-499:end), 3));      % size: N × N
-J_meanAbs2 = squeeze(mean(abs(J_series(:,:,end-499:end)), 3));      % size: N × N
+J_mean2 = squeeze(mean(J_series(:,:,2501:3000), 3));      % size: N × N
+J_meanAbs2 = squeeze(mean(abs(J_series(:,:,2501:3000)), 3));      % size: N × N
 J_var2  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('TrialsChange')
+cd('TrialsRedo100')
 
-writematrix(X,"foodweb_TS_FJ"+rep+".csv");
-writematrix(T,"trophic_level"+rep+".csv");
-writematrix(X(:,fish),"foodweb_TS_fish"+rep+".csv");
-writematrix(web,"foodweb_interactions_FJ"+rep+".csv");
+writematrix(X,"foodweb_TS_FJ"+rep+"_"+new_seed+".csv");
+writematrix(T,"trophic_level"+rep+"_"+new_seed+".csv");
+writematrix(X(:,fish),"foodweb_TS_fish"+rep+"_"+new_seed+".csv");
+writematrix(web,"foodweb_interactions_FJ"+rep+"_"+new_seed+".csv");
 
-writematrix(strength1,"strength"+rep+".csv")
+writematrix(strength1,"strength"+rep+"_"+new_seed+".csv")
 
-writematrix(J_mean1, "J_mean1_"+rep+".csv");
-writematrix(J_var1,  "J_var1_"+rep+".csv");
-writematrix(J_meanAbs1,"J_meanAbs1_"+rep+".csv")
-writematrix(F_mean1, "F_mean1_"+rep+".csv");
-writematrix(F_meanAbs1,"F_meanAbs1_"+rep+".csv")
+writematrix(J_mean1, "J_mean1_"+rep+"_"+new_seed+".csv");
+writematrix(J_var1,  "J_var1_"+rep+"_"+new_seed+".csv");
+writematrix(J_meanAbs1,"J_meanAbs1_"+rep+"_"+new_seed+".csv")
+writematrix(F_mean1, "F_mean1_"+rep+"_"+new_seed+".csv");
+writematrix(F_meanAbs1,"F_meanAbs1_"+rep+"_"+new_seed+".csv")
 
-writematrix(J_mean2, "J_mean2_"+rep+".csv");
-writematrix(J_var2,  "J_var2_"+rep+".csv");
-writematrix(J_meanAbs2,"J_meanAbs2_"+rep+".csv");
-writematrix(F_mean2, "F_mean2_"+rep+".csv");
-writematrix(F_meanAbs2,"F_meanAbs2_"+rep+".csv")
+writematrix(J_mean2, "J_mean2_"+rep+"_"+new_seed+".csv");
+writematrix(J_var2,  "J_var2_"+rep+"_"+new_seed+".csv");
+writematrix(J_meanAbs2,"J_meanAbs2_"+rep+"_"+new_seed+".csv");
+writematrix(F_mean2, "F_mean2_"+rep+"_"+new_seed+".csv");
+writematrix(F_meanAbs2,"F_meanAbs2_"+rep+"_"+new_seed+".csv")
 
-writematrix(e,"e_"+rep+".csv");
-writematrix(ax_ar,"ax_ar"+rep+".csv");
-writematrix(y,"y_"+rep+".csv");
+writematrix(e,"e_"+rep+"_"+new_seed+".csv");
+writematrix(ax_ar,"ax_ar"+rep+"_"+new_seed+".csv");
+writematrix(y,"y_"+rep+"_"+new_seed+".csv");
 
 %[nrF, ncF, ntF] = size(F_series);
-%[nrJ, ncJ, ntJ] = size(J_series);
+[nrJ, ncJ, ntJ] = size(J_series);
 
 % output timeseries of J and F (optional)
 
-%F_out = zeros(ntF, nrF*ncF);
-%J_out = zeros(ntJ, nrJ*ncJ);
+F_out = zeros(ntF, nrF*ncF);
+J_out = zeros(ntJ, nrJ*ncJ);
 
 
-%for tIndex = 1:ntF
-%    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
-%end
+for tIndex = 1:ntF
+    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
+end
 
-%for tIndex = 1:ntJ
-%    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
-%end
+for tIndex = 1:ntJ
+    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
+end
 
-%writematrix(F_out, "F_Inst_" + rep + ".csv");
-%writematrix(J_out, "J_Inst_" + rep + ".csv");
+writematrix(F_out, "F_Inst_" + rep +"_"+new_seed+ ".csv");
+writematrix(J_out, "J_Inst_" + rep +"_"+new_seed+ ".csv");
 
 cd('..')
+else
+    % print message and go on to next one
+    disp('web number');
+    disp(rep);
+end
+
+
 
 end
 
