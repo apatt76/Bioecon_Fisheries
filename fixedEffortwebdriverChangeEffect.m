@@ -24,10 +24,10 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
-seed1=12390;
+seed1=12398;
 
 %rng(5);
-for rep=1:50
+for rep=1:10
 new_seed=seed1;    
 rng(new_seed);
 
@@ -35,7 +35,7 @@ rng(new_seed);
 %rep=100000;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
-tspan=0:dt:3000;
+tspan=0:dt:4000;
 
     %% SETUP
     %k=randi(length(SimCons)); 
@@ -126,7 +126,13 @@ while ~success && attempt < max_attempts
     strength1 = web;              % start with topology
     idx = (strength1 == 1);                       % existing links
     strength1=double(strength1);
-    strength1(idx) = 0.5 + (rand(sum(idx(:)),1) > 0.5);
+    p1=0.1;
+    p2=0.8;
+    p3=0.1;
+    rand_num1 = rand(sum(idx(:)),1);
+    strength1(idx) = 0.5*(rand_num1 < p1) + ...
+                 1.0*(rand_num1 >= p1 & rand_num1 < p1+p2) + ...
+                 1.5*(rand_num1 >= p1+p2);
     
     
     % ---- 3b: update params ---- 
@@ -148,7 +154,7 @@ for i = 2:n_steps
     end
 
 
-    if t(i)>2500
+    if t(i)>3000
         strength=double(strength1);
     else
         strength=double(web);
@@ -179,8 +185,8 @@ end
     % ---- 3d: check extinctions ----
     
 
-    alive1 = X(2500,1:spe)>Bext;  % species alive at timepoint 1
-    alive2 = X(3000,1:spe)>Bext;  % species alive at timepoint 2
+    alive1 = X(3000,1:spe)>Bext;  % species alive at timepoint 1
+    alive2 = X(4000,1:spe)>Bext;  % species alive at timepoint 2
 
     % new extinctions = species that were alive at start but dead at end
     new_extinctions = alive1 & ~alive2;
@@ -223,7 +229,7 @@ if success
 F_series = zeros(nSpecies, nSpecies, nSteps);
 J_series = zeros(nStateVars, nStateVars, nSteps);
 
-for i = (nSteps-1005):nSteps
+for i = (nSteps-2005):nSteps
     xi = X(i,:)';      % state vector at time t(i), as column
     ti = t(i);         % current time
 
@@ -255,23 +261,23 @@ plot(X(:,fish))
 
 %disp(F_series);
 
-F_mean1 = squeeze(mean(F_series(:,:,2000:2500), 3));      % size: N × N
-F_meanAbs1 = squeeze(mean(abs(F_series(:,:,2000:2500)), 3));      % size: N × N
+F_mean1 = squeeze(mean(F_series(:,:,2000:2200), 3));      % size: N × N
+F_meanAbs1 = squeeze(mean(abs(F_series(:,:,2000:2200)), 3));      % size: N × N
 %F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean1 = squeeze(mean(J_series(:,:,2000:2500), 3));      % size: N × N
-J_meanAbs1 = squeeze(mean(abs(J_series(:,:,2000:2500)), 3));      % size: N × N
+J_mean1 = squeeze(mean(J_series(:,:,2000:2200), 3));      % size: N × N
+J_meanAbs1 = squeeze(mean(abs(J_series(:,:,2000:2200)), 3));      % size: N × N
 J_var1  = squeeze(var(J_series, 0, 3));    % size: N × N
 
-F_mean2 = squeeze(mean(F_series(:,:,2501:3000), 3));      % size: N × N
-F_meanAbs2 = squeeze(mean(abs(F_series(:,:,2501:3000)), 3));      % size: N × N
+F_mean2 = squeeze(mean(F_series(:,:,3800:4000), 3));      % size: N × N
+F_meanAbs2 = squeeze(mean(abs(F_series(:,:,3800:4000)), 3));      % size: N × N
 %F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean2 = squeeze(mean(J_series(:,:,2501:3000), 3));      % size: N × N
-J_meanAbs2 = squeeze(mean(abs(J_series(:,:,2501:3000)), 3));      % size: N × N
+J_mean2 = squeeze(mean(J_series(:,:,3800:4000), 3));      % size: N × N
+J_meanAbs2 = squeeze(mean(abs(J_series(:,:,3800:4000)), 3));      % size: N × N
 J_var2  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('TrialsRedo100')
+cd('TrialsChange1')
 
 writematrix(X,"foodweb_TS_FJ"+rep+"_"+new_seed+".csv");
 writematrix(T,"trophic_level"+rep+"_"+new_seed+".csv");
