@@ -25,6 +25,9 @@ load('SimCons.mat')
 cd('..')
 
 seed1=12398;
+tmax=4000;
+noise_scale1=0.05;
+noise_scale2=0.05;
 
 %rng(5);
 for rep=1:10
@@ -35,7 +38,7 @@ rng(new_seed);
 %rep=100000;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
-tspan=0:dt:4000;
+tspan=0:dt:tmax;
 
     %% SETUP
     %k=randi(length(SimCons)); 
@@ -100,8 +103,7 @@ tspan=0:dt:4000;
     X = zeros(n_steps, length(X0));   % preallocate output
     X(1,:) = X0;                       % store initial state
     t = tspan(:);                      % store time points
-    noise_scale1=0.05;
-    noise_scale2=0.05;
+
     options=odeset('RelTol',10^-8,'AbsTol',10^-8);
     seasonality1=0;
     seasonality2=0;
@@ -131,17 +133,21 @@ while ~success && attempt < max_attempts
     p3=0.1;
     rand_num1 = rand(sum(idx(:)),1);
     strength1(idx) = 0.5*(rand_num1 < p1) + ...
-                 1.0*(rand_num1 >= p1 & rand_num1 < p1+p2) + ...
+                 1.0*(rand_num1 >= p1 & rand_num1< p1+p2) + ...
                  1.5*(rand_num1 >= p1+p2);
     
     
     % ---- 3b: update params ---- 
     % include in 3c
  
+
+    % set noise
+    eta=generate_OU_noise(30,n_steps,20,1,1,0.6);
     
     % ---- 3c: integrate for next horizon ----
 for i = 2:n_steps
-    noise=randn(size(B0));
+    noise=eta(:, i);
+    noise=noise.';
     %noise=zeros(1,30);
     En1=noise'.*noise_scale1;
     En2=noise'.*noise_scale2;
@@ -186,7 +192,7 @@ end
     
 
     alive1 = X(3000,1:spe)>Bext;  % species alive at timepoint 1
-    alive2 = X(4000,1:spe)>Bext;  % species alive at timepoint 2
+    alive2 = X(tmax,1:spe)>Bext;  % species alive at timepoint 2
 
     % new extinctions = species that were alive at start but dead at end
     new_extinctions = alive1 & ~alive2;
@@ -263,21 +269,21 @@ plot(X(:,fish))
 
 F_mean1 = squeeze(mean(F_series(:,:,2000:2200), 3));      % size: N × N
 F_meanAbs1 = squeeze(mean(abs(F_series(:,:,2000:2200)), 3));      % size: N × N
-%F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
+F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
 J_mean1 = squeeze(mean(J_series(:,:,2000:2200), 3));      % size: N × N
 J_meanAbs1 = squeeze(mean(abs(J_series(:,:,2000:2200)), 3));      % size: N × N
 J_var1  = squeeze(var(J_series, 0, 3));    % size: N × N
 
-F_mean2 = squeeze(mean(F_series(:,:,3800:4000), 3));      % size: N × N
-F_meanAbs2 = squeeze(mean(abs(F_series(:,:,3800:4000)), 3));      % size: N × N
-%F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean2 = squeeze(mean(J_series(:,:,3800:4000), 3));      % size: N × N
-J_meanAbs2 = squeeze(mean(abs(J_series(:,:,3800:4000)), 3));      % size: N × N
+F_mean2 = squeeze(mean(F_series(:,:,3800:tmax), 3));      % size: N × N
+F_meanAbs2 = squeeze(mean(abs(F_series(:,:,3800:tmax)), 3));      % size: N × N
+F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
+J_mean2 = squeeze(mean(J_series(:,:,3800:tmax), 3));      % size: N × N
+J_meanAbs2 = squeeze(mean(abs(J_series(:,:,3800:tmax)), 3));      % size: N × N
 J_var2  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('TrialsChange1')
+cd('TrialsRedNoise')
 
 writematrix(X,"foodweb_TS_FJ"+rep+"_"+new_seed+".csv");
 writematrix(T,"trophic_level"+rep+"_"+new_seed+".csv");
@@ -302,7 +308,7 @@ writematrix(e,"e_"+rep+"_"+new_seed+".csv");
 writematrix(ax_ar,"ax_ar"+rep+"_"+new_seed+".csv");
 writematrix(y,"y_"+rep+"_"+new_seed+".csv");
 
-%[nrF, ncF, ntF] = size(F_series);
+[nrF, ncF, ntF] = size(F_series);
 [nrJ, ncJ, ntJ] = size(J_series);
 
 % output timeseries of J and F (optional)
