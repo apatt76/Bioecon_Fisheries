@@ -24,16 +24,21 @@ cd('DATA')
 load('SimCons.mat')
 cd('..')
 
-%rng(12390);
-rng(5);
-for rep=1:100
+seed1=12398;
+tmax=5000;
+noise_scale1=0.05;
+noise_scale2=0.05;
 
+%rng(5);
+for rep=1:10
+new_seed=seed1;    
+rng(new_seed);
 
     
 %rep=100000;
 %% SIMULATIONS -------------------------------------------------------------------------
 dt=1;
-tspan=0:dt:3000;
+tspan=0:dt:tmax;
 
     %% SETUP
     %k=randi(length(SimCons)); 
@@ -44,16 +49,16 @@ tspan=0:dt:3000;
     ext=SimCons(k).free.ext;
     B0=SimCons(k).free.B;
     
-    T=SimCons(k).initial.Troph;
+    T_0=SimCons(k).initial.Troph;
     [r,K,y,e,Bs,c,h,ax_ar,Z,po,Bext]=setup_default(web,fish);
     % try averaging the fish and invertebrates:
     %ax_ar
     ax_ar(ax_ar~=0)=0.597;
     %y seems already same?
     
+    
 
-
-    x=ax_ar.*(Z.^(-po.*(T-1)));
+    x_0=ax_ar.*(Z.^(-po.*(T_0-1)));
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %try to increase K
@@ -98,8 +103,7 @@ tspan=0:dt:3000;
     X = zeros(n_steps, length(X0));   % preallocate output
     X(1,:) = X0;                       % store initial state
     t = tspan(:);                      % store time points
-    noise_scale1=0.05;
-    noise_scale2=0.05;
+
     options=odeset('RelTol',10^-8,'AbsTol',10^-8);
     seasonality1=0;
     seasonality2=0;
@@ -112,31 +116,93 @@ tspan=0:dt:3000;
 
 
 % while loop code
-max_attempts = 20;  % max redraws
+max_attempts = 10;  % max redraws
 attempt = 0;
 success = false;
 
 while ~success && attempt < max_attempts
     attempt = attempt + 1;
-    
+    new_seed=seed1+attempt;
+    rng(new_seed);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ---- 3a: create new random strengths ----
-    web1=web;
-    strength1 = web;              % start with topology
-    idx = (strength1 == 1);                       % existing links
-    strength1=double(strength1);
-    strength1(idx) = 0.5;
+    strength1 = web;   % start with topology
+    idx = (strength1 == 0);  
     
+    % how many new connections do we need
+    new_connectance=0.3;
+    num_connect_add=round(new_connectance*900-(900-sum(idx(:))));
+    
+    % non-existing links
+    rowsTL1=find(T_0==1); % get producers
+    idx(rowsTL1,:)=0; % don't let producers become consumers
+    
+    % add the connections
+    add_interact=randsample(1:sum(idx(:)),num_connect_add);
+    draw_interact=find(idx==1);
+    strength1(draw_interact(add_interact)) = 1;
+    % recalculate T and x
+    
+    % Trophic level T calculated with the algebric method of Levine, 1980.
+    W=zeros(spe);
+    nocanweb=strength1;
+    nocanweb(logical(eye(spe)))=0;
+    prey=sum(nocanweb,2)*ones(1,spe);
+    W(prey~=0)=nocanweb(prey~=0)./prey(prey~=0); %W_i_j: 1/number of preys of i if i eats j; 0 otherwise
+    T_1=(inv(eye(spe)-W))*ones(spe,1);
+    x_1=ax_ar.*(Z.^(-po.*(T-1)));
+
+    strength1=double(strength1);
+
+    %{
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % second connectance level
+    strength2 = strength1;   % start with topology
+    idx = (strength2 == 0);  
+    
+    % how many new connections do we need
+    new_connectance=0.40;
+    num_connect_add=round(new_connectance*900-(900-sum(idx(:))));
+    
+    % non-existing links
+    rowsTL2=find(T_0==1); % get producers
+    idx(rowsTL2,:)=0; % don't let producers become consumers
+    
+    % add the connections
+    add_interact=randsample(1:sum(idx(:)),num_connect_add);
+    draw_interact=find(idx==1);
+    strength1(draw_interact(add_interact)) = 1;
+    % recalculate T and x
+    
+    % Trophic level T calculated with the algebric method of Levine, 1980.
+    W=zeros(spe);
+    nocanweb=strength2;
+    nocanweb(logical(eye(spe)))=0;
+    prey=sum(nocanweb,2)*ones(1,spe);
+    W(prey~=0)=nocanweb(prey~=0)./prey(prey~=0); %W_i_j: 1/number of preys of i if i eats j; 0 otherwise
+    T_2=(inv(eye(spe)-W))*ones(spe,1);
+    x_2=ax_ar.*(Z.^(-po.*(T-1)));
+
+    strength2=double(strength2);
+    %}
     
     % ---- 3b: update params ---- 
     % include in 3c
  
+
+    % set noise
+    %eta=generate_OU_noise(30,n_steps,0,1,1,0);
+    eta=randn(30,n_steps);
+    eta(abs(eta)<1)=0.5*eta(abs(eta)<1); % make smallish noise even smaller
+    
     
     % ---- 3c: integrate for next horizon ----
 for i = 2:n_steps
-    noise=randn(size(B0));
+    noise=eta(:, i);
+    noise=noise.';
     %noise=zeros(1,30);
-    En1=noise'.*noise_scale1;
-    En2=noise'.*noise_scale2;
+    En1=noise'.*noise_scale1+0.0;
+    En2=noise'.*noise_scale2+0.0;
     if mod(i,2)==0 %i is even
          Season1=1+seasonality1;
          Season2=1+seasonality2;
@@ -145,18 +211,38 @@ for i = 2:n_steps
          Season2=1-seasonality2; 
     end
 
-
-    if ti>2500
-        strength=strength1;
+  
+    if t(i)>3000
+        strength=double(strength1);
+        x=x_1;
+        T=T_1;
     else
-        strength=web;
+        strength=double(web);
+        x=x_0;
+        T=T_0; 
     end
+
+%{
+    if t(i)>3300
+        strength=double(strength2);
+        x=x_2;
+        T=T_2;
+    elseif t(i)>3150
+        strength=double(strength1);
+        x=x_1;
+        T=T_1;
+    else
+        strength=double(web);
+        x=x_0;
+        T=T_0; 
+    end
+%}
 
     % code to extract the F values from the differential function each
     % timestep
     % Pack all parameters into a struct
     params = struct('x', x, 'y', y, 'r', r, 'K', K, 'e', e, 'h', h, 'c', c, ...
-    'Bs', Bs, 'nicheweb', web, 'harvest', harv, 'mu', mu, ...
+    'Bs', Bs, 'nicheweb', strength, 'harvest', harv, 'mu', mu, ...
     'co', co, 'ca', ca, 'a', a, 'b', b, 'price', price, ...
     'Bext', Bext, 'En1', En1, 'En2', En2, 'Season1', Season1, 'Season2', Season2, 'strength', strength);
 
@@ -176,23 +262,31 @@ end
     
     % ---- 3d: check extinctions ----
     
-    
-    alive1 = X(2500,1:spe)>0;  % species alive at timepoint 1
-    alive2 = X(3000,1:spe)>0;  % species alive at timepoint 2
-    
-    % new extinctions = species that were alive at start but dead at end
-    new_extinctions = alive1 & ~alive2;
 
+    alive1 = X(3000,1:spe)>Bext;  % species alive at timepoint 1
+    alive2 = X(tmax,1:spe)>Bext;  % species alive at timepoint 2
+
+    % new extinctions = species that were alive at start but dead at end
+    disp('here is the number of species alive');
+    disp(sum(alive1));
+    new_extinctions = alive1 & ~alive2;
+    disp('here is the number of new extinctions');
+    disp(sum(new_extinctions));
     % check if there were any new extinctions
-    any_new_extinct = any(new_extinctions);
+    any_new_extinct = sum(new_extinctions)>0;
     
-    if ~any_new_extinct
+    if ~any_new_extinct&&sum(alive1)>10
         success = true;
         fprintf('Success on attempt %d\n', attempt);
+        disp('seed is');
+        disp(new_seed);
     else
-        fprintf('Extinctions occurred on attempt %d, redrawing strengths\n', attempt);
+        fprintf('Attempt did not pass muster %d, increasing seed\n', attempt);
+        disp('seed is');
+        disp(new_seed);
     end
 end
+
 
 
     B=X(:,1:spe);
@@ -202,6 +296,7 @@ end
     X=[B,E];
     ext = X(end, :) == 0;
     count = sum(ext == 0);
+    disp('number of species alive is');
     disp(count);
         
 
@@ -209,12 +304,12 @@ nSteps = length(t);
 nSpecies = size(params.nicheweb, 1);
 nStateVars = size(X, 2);
 
-
-% Preallocate
+if success
+    % Preallocate
 F_series = zeros(nSpecies, nSpecies, nSteps);
 J_series = zeros(nStateVars, nStateVars, nSteps);
 
-for i = nSteps-999:nSteps
+for i = 1:nSteps
     xi = X(i,:)';      % state vector at time t(i), as column
     ti = t(i);         % current time
 
@@ -230,84 +325,96 @@ end
 figure
 set(gcf,'color','w');
 %Time series of all trophic species
-subplot(2,2,1)
+subplot(2,1,1)
 plot(X(:,1:30));
+subplot(2,1,2)
+plot(log(X(:,1:30)));
+
 %Time series of Effort (unchanging in the Fixed Effort simulation)
-subplot(2,2,2)
-plot(X(:,31));
+%subplot(2,2,2)
+%plot(X(:,31));
 %Time series of harvested species
-subplot(2,2,3)
-plot(X(:,harv))
+%subplot(2,2,3)
+%plot(X(:,harv))
 %Time series of all labeled fish species
-subplot(2,2,4)
-plot(X(:,fish))
+%subplot(2,2,4)
+%plot(X(:,fish))
 
 
 
 %disp(F_series);
 
-F_mean1 = squeeze(mean(F_series(:,:,end-999:end-499), 3));      % size: N × N
-F_meanAbs1 = squeeze(mean(abs(F_series(:,:,end-999:end-499)), 3));      % size: N × N
-%F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean1 = squeeze(mean(J_series(:,:,end-999:end-499), 3));      % size: N × N
-J_meanAbs1 = squeeze(mean(abs(J_series(:,:,end-999:end-499)), 3));      % size: N × N
+F_mean1 = squeeze(mean(F_series(:,:,2000:2200), 3));      % size: N × N
+F_meanAbs1 = squeeze(mean(abs(F_series(:,:,2000:2200)), 3));      % size: N × N
+F_var1  = squeeze(var(F_series, 0, 3));    % size: N × N
+J_mean1 = squeeze(mean(J_series(:,:,2000:2200), 3));      % size: N × N
+J_meanAbs1 = squeeze(mean(abs(J_series(:,:,2000:2200)), 3));      % size: N × N
 J_var1  = squeeze(var(J_series, 0, 3));    % size: N × N
 
-F_mean2 = squeeze(mean(F_series(:,:,end-499:end), 3));      % size: N × N
-F_meanAbs2 = squeeze(mean(abs(F_series(:,:,end-499:end)), 3));      % size: N × N
-%F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
-J_mean2 = squeeze(mean(J_series(:,:,end-499:end), 3));      % size: N × N
-J_meanAbs2 = squeeze(mean(abs(J_series(:,:,end-499:end)), 3));      % size: N × N
+F_mean2 = squeeze(mean(F_series(:,:,3800:tmax), 3));      % size: N × N
+F_meanAbs2 = squeeze(mean(abs(F_series(:,:,3800:tmax)), 3));      % size: N × N
+F_var2  = squeeze(var(F_series, 0, 3));    % size: N × N
+J_mean2 = squeeze(mean(J_series(:,:,3800:tmax), 3));      % size: N × N
+J_meanAbs2 = squeeze(mean(abs(J_series(:,:,3800:tmax)), 3));      % size: N × N
 J_var2  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('TrialsChange')
+cd('IncreaseConnect30')
 
-writematrix(X,"foodweb_TS_FJ"+rep+".csv");
-writematrix(T,"trophic_level"+rep+".csv");
-writematrix(X(:,fish),"foodweb_TS_fish"+rep+".csv");
-writematrix(web,"foodweb_interactions_FJ"+rep+".csv");
+exportgraphics(gca, "myPlot_"+rep+".png");
 
-writematrix(strength1,"strength"+rep+".csv")
+writematrix(X,"foodweb_TS_FJ"+rep+"_"+new_seed+".csv");
+writematrix(T,"trophic_level"+rep+"_"+new_seed+".csv");
+writematrix(X(:,fish),"foodweb_TS_fish"+rep+"_"+new_seed+".csv");
+writematrix(web,"foodweb_interactions_FJ"+rep+"_"+new_seed+".csv");
 
-writematrix(J_mean1, "J_mean1_"+rep+".csv");
-writematrix(J_var1,  "J_var1_"+rep+".csv");
-writematrix(J_meanAbs1,"J_meanAbs1_"+rep+".csv")
-writematrix(F_mean1, "F_mean1_"+rep+".csv");
-writematrix(F_meanAbs1,"F_meanAbs1_"+rep+".csv")
+writematrix(strength1,"strength"+rep+"_"+new_seed+".csv")
 
-writematrix(J_mean2, "J_mean2_"+rep+".csv");
-writematrix(J_var2,  "J_var2_"+rep+".csv");
-writematrix(J_meanAbs2,"J_meanAbs2_"+rep+".csv");
-writematrix(F_mean2, "F_mean2_"+rep+".csv");
-writematrix(F_meanAbs2,"F_meanAbs2_"+rep+".csv")
+writematrix(J_mean1, "J_mean1_"+rep+"_"+new_seed+".csv");
+writematrix(J_var1,  "J_var1_"+rep+"_"+new_seed+".csv");
+writematrix(J_meanAbs1,"J_meanAbs1_"+rep+"_"+new_seed+".csv")
+writematrix(F_mean1, "F_mean1_"+rep+"_"+new_seed+".csv");
+writematrix(F_meanAbs1,"F_meanAbs1_"+rep+"_"+new_seed+".csv")
 
-writematrix(e,"e_"+rep+".csv");
-writematrix(ax_ar,"ax_ar"+rep+".csv");
-writematrix(y,"y_"+rep+".csv");
+writematrix(J_mean2, "J_mean2_"+rep+"_"+new_seed+".csv");
+writematrix(J_var2,  "J_var2_"+rep+"_"+new_seed+".csv");
+writematrix(J_meanAbs2,"J_meanAbs2_"+rep+"_"+new_seed+".csv");
+writematrix(F_mean2, "F_mean2_"+rep+"_"+new_seed+".csv");
+writematrix(F_meanAbs2,"F_meanAbs2_"+rep+"_"+new_seed+".csv")
 
-%[nrF, ncF, ntF] = size(F_series);
-%[nrJ, ncJ, ntJ] = size(J_series);
+writematrix(e,"e_"+rep+"_"+new_seed+".csv");
+writematrix(ax_ar,"ax_ar"+rep+"_"+new_seed+".csv");
+writematrix(y,"y_"+rep+"_"+new_seed+".csv");
+
+[nrF, ncF, ntF] = size(F_series);
+[nrJ, ncJ, ntJ] = size(J_series);
 
 % output timeseries of J and F (optional)
 
-%F_out = zeros(ntF, nrF*ncF);
-%J_out = zeros(ntJ, nrJ*ncJ);
+F_out = zeros(ntF, nrF*ncF);
+J_out = zeros(ntJ, nrJ*ncJ);
 
 
-%for tIndex = 1:ntF
-%    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
-%end
+for tIndex = 1:ntF
+    F_out(tIndex, :) = reshape(F_series(:,:,tIndex), 1, []);
+end
 
-%for tIndex = 1:ntJ
-%    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
-%end
+for tIndex = 1:ntJ
+    J_out(tIndex, :) = reshape(J_series(:,:,tIndex), 1, []);
+end
 
-%writematrix(F_out, "F_Inst_" + rep + ".csv");
-%writematrix(J_out, "J_Inst_" + rep + ".csv");
+writematrix(F_out, "F_Inst_" + rep +"_"+new_seed+ ".csv");
+writematrix(J_out, "J_Inst_" + rep +"_"+new_seed+ ".csv");
 
 cd('..')
+else
+    % print message and go on to next one
+    disp('web number');
+    disp(rep);
+end
+
+
 
 end
 
