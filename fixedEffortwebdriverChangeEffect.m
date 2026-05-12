@@ -142,15 +142,18 @@ while ~success && attempt < max_attempts
  
 
     % set noise
-    eta=generate_OU_noise(30,n_steps,20,1,1,0.6);
+    %eta=generate_OU_noise(30,n_steps,0,1,1,0);
+    eta=randn(30,n_steps);
+    eta(abs(eta)<1)=0.5*eta(abs(eta)<1); % make smallish noise even smaller
+    
     
     % ---- 3c: integrate for next horizon ----
 for i = 2:n_steps
     noise=eta(:, i);
     noise=noise.';
     %noise=zeros(1,30);
-    En1=noise'.*noise_scale1;
-    En2=noise'.*noise_scale2;
+    En1=noise'.*noise_scale1+0.0;
+    En2=noise'.*noise_scale2+0.0;
     if mod(i,2)==0 %i is even
          Season1=1+seasonality1;
          Season2=1+seasonality2;
@@ -195,19 +198,21 @@ end
     alive2 = X(tmax,1:spe)>Bext;  % species alive at timepoint 2
 
     % new extinctions = species that were alive at start but dead at end
+    disp('here is the number of species alive');
+    disp(sum(alive1));
     new_extinctions = alive1 & ~alive2;
     disp('here is the number of new extinctions');
     disp(sum(new_extinctions));
     % check if there were any new extinctions
     any_new_extinct = any(new_extinctions);
     
-    if ~any_new_extinct
+    if ~any_new_extinct&&sum(alive1)>10
         success = true;
         fprintf('Success on attempt %d\n', attempt);
         disp('seed is');
         disp(new_seed);
     else
-        fprintf('Extinctions occurred on attempt %d, redrawing strengths\n', attempt);
+        fprintf('Attempt did not pass muster %d, increasing seed\n', attempt);
         disp('seed is');
         disp(new_seed);
     end
@@ -251,17 +256,18 @@ end
 figure
 set(gcf,'color','w');
 %Time series of all trophic species
-subplot(2,2,1)
+%subplot(2,2,1)
 plot(X(:,1:30));
+
 %Time series of Effort (unchanging in the Fixed Effort simulation)
-subplot(2,2,2)
-plot(X(:,31));
+%subplot(2,2,2)
+%plot(X(:,31));
 %Time series of harvested species
-subplot(2,2,3)
-plot(X(:,harv))
+%subplot(2,2,3)
+%plot(X(:,harv))
 %Time series of all labeled fish species
-subplot(2,2,4)
-plot(X(:,fish))
+%subplot(2,2,4)
+%plot(X(:,fish))
 
 
 
@@ -283,7 +289,9 @@ J_var2  = squeeze(var(J_series, 0, 3));    % size: N × N
 
 
 
-cd('TrialsRedNoise')
+cd('ModNoiseSample1_0.5')
+
+exportgraphics(gca, "myPlot_"+rep+".png");
 
 writematrix(X,"foodweb_TS_FJ"+rep+"_"+new_seed+".csv");
 writematrix(T,"trophic_level"+rep+"_"+new_seed+".csv");

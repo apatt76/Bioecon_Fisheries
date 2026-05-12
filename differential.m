@@ -102,8 +102,11 @@ TrophLoss=sum(loss,1)';
 HarvLoss=zeros(spe,1);
 HarvLoss(harvest)=ca*E.*B(harvest);
 
+%% 5b. Small immigration to reduces stochastic extinction
+Immigration=ones(spe,1)*1e-7;
+
 %% 6. dBdt: array of temporel derivatives of B_i
-dBdt=NPP - MetaLoss - TrophLoss + TrophGain - HarvLoss;
+dBdt=NPP - MetaLoss - TrophLoss + TrophGain - HarvLoss + Immigration;
 
 %% -----------------------------------------------------------------------------
 % ECONOMIC MODEL ---------------------------------------------------------------
